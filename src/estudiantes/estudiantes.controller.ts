@@ -1,28 +1,40 @@
-import { Controller, Get, Param, Query, Post, Body, ParseIntPipe, DefaultValuePipe, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, NotFoundException, Patch, Delete } from '@nestjs/common';
 import { EstudiantesService } from './estudiantes.service';
 import { CreateEstudianteDto } from './dto/create-estudiante.dto';
+import { UpdateEstudianteDto } from './dto/update-estudiante.dto';
 
 @Controller('estudiantes')
 export class EstudiantesController {
-  constructor(private service: EstudiantesService) {}
+  constructor(private readonly estudiantesService: EstudiantesService) {}
 
   @Get()
-  async findAll(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-  ) {
-    return this.service.findAll(page, limit);
+  async findAll(@Query('page') page = 1, @Query('limit') limit = 10) {
+    return this.estudiantesService.findAll(+page, +limit);
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.service.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const estudiante = await this.estudiantesService.findOne(+id);
+    if (!estudiante) throw new NotFoundException('Estudiante no encontrado');
+    return estudiante;
   }
 
   @Post()
-  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-  async create(@Body() dto: CreateEstudianteDto) {
-    const created = await this.service.create(dto);
-    return { status: 'success', data: created };
+  create(@Body() data: CreateEstudianteDto) {
+    return this.estudiantesService.create(data);
+  }
+
+  @Patch(':id')
+  async update(@Param('id') id: string, @Body() data: UpdateEstudianteDto) {
+    const updated = await this.estudiantesService.update(+id, data);
+    if (!updated) throw new NotFoundException('Estudiante no encontrado');
+    return updated;
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    const deleted = await this.estudiantesService.remove(+id);
+    if (!deleted) throw new NotFoundException('Estudiante no encontrado');
+    return { message: 'Estudiante eliminado correctamente' };
   }
 }

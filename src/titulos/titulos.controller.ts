@@ -1,28 +1,34 @@
-import { Controller, Get, Param, Query, Post, Body, ParseIntPipe, DefaultValuePipe, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, ParseIntPipe } from '@nestjs/common';
 import { TitulosService } from './titulos.service';
 import { CreateTituloDto } from './dto/create-titulo.dto';
+import { UpdateTituloDto } from './dto/update-titulo.dto';
 
 @Controller('titulos')
 export class TitulosController {
-  constructor(private service: TitulosService) {}
+  constructor(private readonly titulosService: TitulosService) {}
 
   @Get()
-  async findAll(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-  ) {
-    return this.service.findAll(page, limit);
+  findAll() {
+    return this.titulosService.findAll();
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.service.findOne(id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.titulosService.findOne(id);
   }
 
   @Post()
-  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-  async create(@Body() dto: CreateTituloDto) {
-    const created = await this.service.create(dto);
-    return { status: 'success', data: created };
+  create(@Body() data: CreateTituloDto) {
+    return this.titulosService.create(data);
+  }
+
+  @Patch(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateTituloDto) {
+    return this.titulosService.update(id, data);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.titulosService.remove(id);
   }
 }

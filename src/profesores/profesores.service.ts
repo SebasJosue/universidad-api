@@ -1,27 +1,33 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProfesorDto } from './dto/create-profesor.dto';
+import { UpdateProfesorDto } from './dto/update-profesor.dto';
 
 @Injectable()
 export class ProfesoresService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(page = 1, limit = 10) {
-    const skip = (page - 1) * limit;
-    const [data, total] = await Promise.all([
-      this.prisma.profesor.findMany({ skip, take: limit, include: { materias: true, titulos: true } }),
-      this.prisma.profesor.count(),
-    ]);
-    return { data, meta: { total, page, limit, pages: Math.ceil(total / limit) } };
+  async findAll() {
+    return this.prisma.profesor.findMany();
   }
 
   async findOne(id: number) {
-    const p = await this.prisma.profesor.findUnique({ where: { id }, include: { materias: true, titulos: true } });
-    if (!p) throw new NotFoundException(`Profesor ${id} no encontrado`);
-    return p;
+    const profesor = await this.prisma.profesor.findUnique({ where: { id } });
+    if (!profesor) throw new NotFoundException(`Profesor con id ${id} no encontrado`);
+    return profesor;
   }
 
-  async create(dto: CreateProfesorDto) {
-    return this.prisma.profesor.create({ data: { nombre: dto.nombre, email: dto.email } });
+  async create(data: CreateProfesorDto) {
+    return this.prisma.profesor.create({ data });
+  }
+
+  async update(id: number, data: UpdateProfesorDto) {
+    const profesor = await this.findOne(id);
+    return this.prisma.profesor.update({ where: { id: profesor.id }, data });
+  }
+
+  async remove(id: number) {
+    await this.findOne(id);
+    return this.prisma.profesor.delete({ where: { id } });
   }
 }

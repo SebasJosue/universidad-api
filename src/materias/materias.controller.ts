@@ -1,28 +1,40 @@
-import { Controller, Get, Param, Query, Post, Body, ParseIntPipe, DefaultValuePipe, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, NotFoundException, Patch, Delete } from '@nestjs/common';
 import { MateriasService } from './materias.service';
 import { CreateMateriaDto } from './dto/create-materia.dto';
+import { UpdateMateriaDto } from './dto/update-materia.dto';
 
 @Controller('materias')
 export class MateriasController {
-  constructor(private service: MateriasService) {}
+  constructor(private readonly materiasService: MateriasService) {}
 
   @Get()
-  async findAll(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-  ) {
-    return this.service.findAll(page, limit);
+  async findAll(@Query('page') page = 1, @Query('limit') limit = 10) {
+    return this.materiasService.findAll(+page, +limit);
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.service.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const materia = await this.materiasService.findOne(+id);
+    if (!materia) throw new NotFoundException('Materia no encontrada');
+    return materia;
   }
 
   @Post()
-  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-  async create(@Body() dto: CreateMateriaDto) {
-    const created = await this.service.create(dto);
-    return { status: 'success', data: created };
+  create(@Body() data: CreateMateriaDto) {
+    return this.materiasService.create(data);
+  }
+
+  @Patch(':id')
+  async update(@Param('id') id: string, @Body() data: UpdateMateriaDto) {
+    const updated = await this.materiasService.update(+id, data);
+    if (!updated) throw new NotFoundException('Materia no encontrada');
+    return updated;
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    const deleted = await this.materiasService.remove(+id);
+    if (!deleted) throw new NotFoundException('Materia no encontrada');
+    return { message: 'Materia eliminada correctamente' };
   }
 }
